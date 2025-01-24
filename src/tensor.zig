@@ -189,12 +189,12 @@ pub fn Tensor(comptime T: type) type {
         //       ADDITION
         // ====================================
 
-        pub fn element_wise_add(self: Self, other: anytype) Self {
+        pub fn add(self: Self, other: anytype) Self {
             _ = self;
             _ = other;
         }
 
-        pub fn element_wise_add_mut(self: *Self, other: anytype) void {
+        pub fn add_mut(self: *Self, other: anytype) void {
             _ = self;
             _ = other;
         }
@@ -215,12 +215,12 @@ pub fn Tensor(comptime T: type) type {
         //       Subtraction
         // ====================================
 
-        pub fn element_wise_sub(self: Self, other: anytype) Self {
+        pub fn sub(self: Self, other: anytype) Self {
             _ = self;
             _ = other;
         }
 
-        pub fn element_wise_sub_mut(self: *Self, other: anytype) void {
+        pub fn sub_mut(self: *Self, other: anytype) void {
             _ = self;
             _ = other;
         }
@@ -241,12 +241,12 @@ pub fn Tensor(comptime T: type) type {
         //       Multiplication
         // ====================================
 
-        pub fn element_wise_mul(self: Self, other: anytype) Self {
+        pub fn mul(self: Self, other: anytype) Self {
             _ = self;
             _ = other;
         }
 
-        pub fn element_wise_mul_mut(self: *Self, other: anytype) void {
+        pub fn mul_mut(self: *Self, other: anytype) void {
             _ = self;
             _ = other;
         }
@@ -267,6 +267,7 @@ pub fn Tensor(comptime T: type) type {
         pub fn matmul(lhs: Self, rhs: Self) void {
             _ = lhs;
             _ = rhs;
+            // TODO: connect to cuda
         }
 
         /// shorthand for matmul
@@ -278,12 +279,12 @@ pub fn Tensor(comptime T: type) type {
         //       Division
         // ====================================
 
-        pub fn element_wise_div(self: Self, other: anytype) !Self {
+        pub fn div(self: Self, other: anytype) !Self {
             _ = self;
             _ = other;
         }
 
-        pub fn element_wise_div_mut(self: *Self, other: anytype) !void {
+        pub fn div_mut(self: *Self, other: anytype) !void {
             _ = self;
             _ = other;
         }
@@ -317,6 +318,9 @@ pub fn Tensor(comptime T: type) type {
 
             return true;
         }
+
+        /// TODO: Implement
+        pub fn approx() void {}
 
         /// equals requires the same shape as well
         pub fn isSameAs(self: Self, other: Self) bool {
