@@ -6,15 +6,17 @@ const math = std.math;
 
 const zinyn = @import("zinyn");
 const Tensor = zinyn.Tensor;
+const mse = zinyn.Tensor.mse;
 const Layer = zinyn.Layer;
+const Model = zinyn.Model;
 const optim = zinyn.optim;
 const Adam = optim.Adam;
 const mse = zinyn.losses.mse;
 
-fn train_step(x: Tensor(f32), model: []Layer, opt: *Adam) Tensor(f32) {
+fn train_step(x: Tensor(f32), model: *Model, opt: *Adam) Tensor(f32) {
     opt.zero_grad();
 
-    const y = model.apply(x);
+    const y = model.forward(x);
 
     const loss = mse(x, y);
 

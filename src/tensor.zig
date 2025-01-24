@@ -9,7 +9,6 @@ const utils = @import("utils.zig");
 pub fn Tensor(comptime T: type) type {
     return struct {
         const Self = @This();
-        pub var dtype: type = T;
 
         data: []T,
         shape: []usize,
@@ -18,6 +17,7 @@ pub fn Tensor(comptime T: type) type {
 
         /// Init tensor with undefined values
         pub fn init(allocator: Allocator, shape: anytype) !Self {
+            // TODO: Use tigerstyle?
             var total_elems: usize = 1;
 
             for (shape) |dim| total_elems *= dim;
@@ -37,6 +37,11 @@ pub fn Tensor(comptime T: type) type {
                 .strides = strides,
                 .allocator = allocator,
             };
+        }
+
+        /// Gets the datatype
+        pub inline fn dtype(_: Self) type {
+            return T;
         }
 
         /// Deinitialize tensor
@@ -71,12 +76,12 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Shorthand fill for zeros
-        pub fn zeros(allocator: Allocator, shape: anytype) !Self {
+        pub inline fn zeros(allocator: Allocator, shape: anytype) !Self {
             return Self.fill(allocator, @as(T, 0), shape);
         }
 
         /// Shorthand fill for ones
-        pub fn ones(allocator: Allocator, shape: anytype) !Self {
+        pub inline fn ones(allocator: Allocator, shape: anytype) !Self {
             return Self.fill(allocator, @as(T, 1), shape);
         }
 
@@ -88,13 +93,13 @@ pub fn Tensor(comptime T: type) type {
             return Self.fill(allocator, @as(T, value), shape);
         }
 
-        pub fn randn(allocator: Allocator, lo: T, hi: T, shape: anytype) !Self {
+        pub inline fn randn(allocator: Allocator, lo: T, hi: T, shape: anytype) !Self {
             // TODO: Fix
             return Self.fill(allocator, @as(T, lo + hi), shape);
         }
 
         /// Get the rank of the tensor
-        pub fn rank(self: Self) usize {
+        pub inline fn rank(self: Self) usize {
             return self.shape.len;
         }
 
@@ -130,12 +135,12 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Get first element of tensor
-        pub fn getFirst(self: *Self) T {
+        pub inline fn getFirst(self: *Self) T {
             return self.data[0];
         }
 
         /// Full size of tensor
-        pub fn size(self: *Self) u64 {
+        pub inline fn size(self: *Self) u64 {
             return self.data.len;
         }
 
@@ -162,7 +167,7 @@ pub fn Tensor(comptime T: type) type {
         }
 
         // self explanatory
-        fn getMemoryConsumption(self: *Self) f32 {
+        inline fn getMemoryConsumption(self: *Self) f32 {
             return self.getFirst() * 4.0;
         }
 
@@ -173,9 +178,8 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// reshape the tensor
-        pub fn reshape(self: *Self, newshape: anytype) void {
+        pub inline fn reshape(self: *Self, newshape: anytype) void {
             if (newshape.len != self.shape) return;
-
             self.shape = newshape;
         }
 
