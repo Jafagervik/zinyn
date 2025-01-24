@@ -7,7 +7,8 @@ pub fn getRandomNumber() !f32 {
         return error.RandSeedError;
     };
 
-    var prng = std.rand.DefaultPrng.init(seed);
+    // Needed in 0.14.234523454 dev something
+    var prng = std.Random.DefaultPrng.init(seed);
     const rnd = prng.random();
 
     // Generate a random float between 0 and 1
