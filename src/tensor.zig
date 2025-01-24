@@ -11,8 +11,8 @@ pub fn Tensor(comptime T: type) type {
         const Self = @This();
 
         data: []T,
-        shape: []usize,
-        strides: []usize,
+        shape: []u32,
+        strides: []u32,
         allocator: Allocator,
 
         /// Init tensor with undefined values
@@ -25,7 +25,7 @@ pub fn Tensor(comptime T: type) type {
             const data = try allocator.alloc(T, total_elems);
             errdefer allocator.free(data);
 
-            const owned_shape = try allocator.dupe(usize, shape);
+            const owned_shape = try allocator.dupe(u32, shape);
             errdefer allocator.free(owned_shape);
 
             const strides = try calculateStrides(allocator, shape);
@@ -37,6 +37,20 @@ pub fn Tensor(comptime T: type) type {
                 .strides = strides,
                 .allocator = allocator,
             };
+        }
+
+        /// init from other shape
+        pub fn zeros_like(allocator: Allocator, other: Self) !Self {
+            return Self.zeros(allocator, other.shapeIs());
+        }
+
+        pub fn ones_like(allocator: Allocator, other: Self) !Self {
+            return Self.ones(allocator, other.shapeIs());
+        }
+
+        /// get shape from tensor
+        pub fn shapeIs(self: Self) []u32 {
+            return self.shape;
         }
 
         /// Gets the datatype
@@ -61,7 +75,7 @@ pub fn Tensor(comptime T: type) type {
 
             @memset(data, value);
 
-            const owned_shape = try allocator.dupe(usize, shape);
+            const owned_shape = try allocator.dupe(u32, shape);
             errdefer allocator.free(owned_shape);
 
             const strides = try calculateStrides(allocator, shape);
@@ -99,7 +113,7 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Get the rank of the tensor
-        pub inline fn rank(self: Self) usize {
+        pub inline fn rank(self: Self) u32 {
             return self.shape.len;
         }
 
@@ -144,9 +158,9 @@ pub fn Tensor(comptime T: type) type {
             return self.data.len;
         }
 
-        fn calculateStrides(allocator: Allocator, shape: []const usize) ![]usize {
-            const strides = try allocator.alloc(usize, shape.len);
-            var current_stride: usize = 1;
+        fn calculateStrides(allocator: Allocator, shape: []const u32) ![]u32 {
+            const strides = try allocator.alloc(u32, shape.len);
+            var current_stride: u32 = 1;
 
             var i = shape.len;
             while (i > 0) : (i -= 1) {
@@ -408,7 +422,7 @@ test "Tensor initialization" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
-    var tensor = try TF32.init(allocator, &[_]usize{ 2, 3, 4 });
+    var tensor = try TF32.init(allocator, &[_]u32{ 2, 3, 4 });
     defer tensor.deinit();
 
     try testing.expectEqual(tensor.shape.len, 3);
@@ -420,7 +434,7 @@ test "Random tensor init" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
-    var tensor = try TF32.ones(allocator, &[_]usize{ 3, 3, 3 });
+    var tensor = try TF32.ones(allocator, &[_]u32{ 3, 3, 3 });
     defer tensor.deinit();
 
     const s = tensor.sum();
@@ -431,7 +445,7 @@ test "minmax extrema" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
-    var tensor = try TF32.ones(allocator, &[_]usize{ 3, 3, 3 });
+    var tensor = try TF32.ones(allocator, &[_]u32{ 3, 3, 3 });
     defer tensor.deinit();
 
     try testing.expectEqual(.{ 1.0, 1.0 }, tensor.extrema());
@@ -442,7 +456,7 @@ test "rand" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
-    var tensor = try TF32.rand(allocator, &[_]usize{ 3, 3, 3 });
+    var tensor = try TF32.rand(allocator, &[_]u32{ 3, 3, 3 });
     defer tensor.deinit();
 
     try testing.expectEqual(27, tensor.size());
@@ -453,7 +467,7 @@ test "randn" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
-    var tensor = try TF32.randn(allocator, 1.0, 4.0, &[_]usize{ 3, 3, 3 });
+    var tensor = try TF32.randn(allocator, 1.0, 4.0, &[_]u32{ 3, 3, 3 });
     defer tensor.deinit();
 
     try testing.expectEqual(27, tensor.size());
