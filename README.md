@@ -1,4 +1,6 @@
-# My nth attempt at making a cool neural network library
+# Zinyn - ML and AI made possible for fun
+
+To quote a wise man: "For the joy of programming!"
 
 ## supported ops
 
