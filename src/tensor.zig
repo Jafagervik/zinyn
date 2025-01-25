@@ -512,6 +512,32 @@ test "randn" {
     try testing.expectEqual(27, tensor.size());
 }
 
+test "zeros like" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var tensor = try TF32.init(allocator, &[_]u32{ 3, 3, 3 });
+    defer tensor.deinit();
+
+    var zl = try TF32.zeros_like(allocator, tensor);
+    defer zl.deinit();
+
+    try testing.expectEqual(@as(f32, 0), zl.getFirst());
+}
+
+test "ones like" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var tensor = try TF32.init(allocator, &[_]u32{ 3, 3, 3 });
+    defer tensor.deinit();
+
+    var zl = try TF32.ones_like(allocator, tensor);
+    defer zl.deinit();
+
+    try testing.expectEqual(@as(f32, 1), zl.getFirst());
+}
+
 // TODO: Fill in these tests
 test "add" {}
 test "sub" {}
