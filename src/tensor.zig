@@ -289,7 +289,7 @@ pub fn Tensor(comptime T: type) type {
 
         pub fn mul_scalar_mut(self: *Self, value: T) void {
             for (self.data) |e| {
-                e -= value;
+                e = @mulWithOverflow(e, value);
             }
         }
 
