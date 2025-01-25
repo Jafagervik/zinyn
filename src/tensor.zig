@@ -226,13 +226,21 @@ pub fn Tensor(comptime T: type) type {
         // ====================================
 
         /// Add two tensors and return a new one
-        pub fn add(self: Self, other: anytype) Self {
-            _ = self;
-            _ = other;
+        pub fn add(lhs: Self, rhs: Self) !Self {
+            if (lhs.shapeIs() != rhs.shapeIs()) return error.MatrixError;
+
+            var t = try Self.init(allocator, lhs.shapeIs());
+
+            var i: u32 = 0;
+            for (lsh.data, rhs.data) : (i += 1) : |*l, *r|  {
+                t.setVal(i, l.* + r.*);
+            }
+
+            return t;
         }
 
         /// Add two tensors and mutate the first one
-        pub fn add_mut(self: *Self, other: anytype) void {
+        pub fn add_mut(self: *Self, other: Self) void {
             _ = self;
             _ = other;
         }
