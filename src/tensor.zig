@@ -227,13 +227,14 @@ pub fn Tensor(comptime T: type) type {
 
         /// Add two tensors and return a new one
         pub fn add(lhs: Self, rhs: Self) !Self {
-            if (lhs.shapeIs() != rhs.shapeIs()) return error.MatrixError;
+            if (!std.mem.eql(u32, lhs.shapeIs(), rhs.shapeIs())) {
+                return error.TensorError;
+            }
 
-            var t = try Self.init(allocator, lhs.shapeIs());
+            var t = try Self.init(lhs.allocator, lhs.shapeIs());
 
-            var i: u32 = 0;
-            for (lsh.data, rhs.data) : (i += 1) : |*l, *r|  {
-                t.setVal(i, l.* + r.*);
+            for (lhs.data, rhs.data, 0..) |l, r, i| {
+                t.data[i] = l + r;
             }
 
             return t;
@@ -263,9 +264,18 @@ pub fn Tensor(comptime T: type) type {
         //       Subtraction
         // ====================================
 
-        pub fn sub(self: Self, other: anytype) Self {
-            _ = self;
-            _ = other;
+        pub fn sub(lhs: Self, rhs: Self) !Self {
+            if (!std.mem.eql(u32, lhs.shapeIs(), rhs.shapeIs())) {
+                return error.TensorError;
+            }
+
+            var t = try Self.init(lhs.allocator, lhs.shapeIs());
+
+            for (lhs.data, rhs.data, 0..) |l, r, i| {
+                t.data[i] = l - r;
+            }
+
+            return t;
         }
 
         pub fn sub_mut(self: *Self, other: anytype) void {
@@ -289,9 +299,18 @@ pub fn Tensor(comptime T: type) type {
         //       Multiplication
         // ====================================
 
-        pub fn mul(self: Self, other: anytype) Self {
-            _ = self;
-            _ = other;
+        pub fn mul(lhs: Self, rhs: Self) !Self {
+            if (!std.mem.eql(u32, lhs.shapeIs(), rhs.shapeIs())) {
+                return error.TensorError;
+            }
+
+            var t = try Self.init(lhs.allocator, lhs.shapeIs());
+
+            for (lhs.data, rhs.data, 0..) |l, r, i| {
+                t.data[i] = l * r;
+            }
+
+            return t;
         }
 
         pub fn mul_mut(self: *Self, other: anytype) void {
@@ -327,9 +346,19 @@ pub fn Tensor(comptime T: type) type {
         //       Division
         // ====================================
 
-        pub fn div(self: Self, other: anytype) !Self {
-            _ = self;
-            _ = other;
+        pub fn div(lhs: Self, rhs: Self) !Self {
+            if (!std.mem.eql(u32, lhs.shapeIs(), rhs.shapeIs())) {
+                return error.TensorError;
+            }
+
+            var t = try Self.init(lhs.allocator, lhs.shapeIs());
+
+            for (lhs.data, rhs.data, 0..) |l, r, i| {
+                if (r == 0.0) return error.DivByZeroError;
+                t.data[i] = @divExact(l, r);
+            }
+
+            return t;
         }
 
         pub fn div_mut(self: *Self, other: anytype) !void {
@@ -553,8 +582,71 @@ test "ones like" {
 }
 
 // TODO: Fill in these tests
-test "add" {}
-test "sub" {}
-test "mul" {}
+test "add" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    var c = try a.add(b);
+    defer c.deinit();
+
+    try testing.expectEqual(5.0, c.getFirst());
+}
+
+test "sub" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    var c = try a.sub(b);
+    defer c.deinit();
+
+    try testing.expectEqual(2.0, c.getFirst());
+}
+test "mul" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    var c = try a.mul(b);
+    defer c.deinit();
+
+    try testing.expectEqual(8.0, c.getFirst());
+}
+
 test "matmul" {}
-test "div" {}
+
+test "div" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 8.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    var c = try a.div(b);
+    defer c.deinit();
+
+    try testing.expectEqual(2.0, c.getFirst());
+}
