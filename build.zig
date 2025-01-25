@@ -2,19 +2,24 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
+    const optimize = b.standardOptimizeOption(.{});
+
+    _ = b.addModule("zinyn", .{
+        .root_source_file = b.path("src/root.zig"),
+    });
 
     const lib = b.addStaticLibrary(.{
         .name = "zinyn",
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
+        .version = .{ .major = 0, .minor = 0, .patch = 1 },
     });
 
     b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
-        .name = "zinyn",
+        .name = "zinyna",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
