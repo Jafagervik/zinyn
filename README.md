@@ -2,8 +2,6 @@
 
 To quote a wise man: "For the joy of programming!"
 
-## supported ops
-
 ## Install
 
 To add to build.zig.zon
@@ -52,3 +50,7 @@ pub fn main() !void {
     std.debug.print("Sum is {d:.3}\n", .{bon.sum()});
 }
 ```
+
+### Contribute
+
+Hell yea! Feel free to add suggestions/corrections. I am a mere mortal, not a god
