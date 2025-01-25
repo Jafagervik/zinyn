@@ -497,7 +497,8 @@ test "rand" {
     var tensor = try TF32.rand(allocator, &[_]u32{ 3, 3, 3 });
     defer tensor.deinit();
 
-    try testing.expectEqual(27, tensor.size());
+    try testing.expect(tensor.min() >= @as(f32, 0));
+    try testing.expect(tensor.max() <= @as(f32, 1));
 }
 
 test "randn" {
