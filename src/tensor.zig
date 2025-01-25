@@ -44,17 +44,19 @@ pub fn Tensor(comptime T: type) type {
             return Self.zeros(allocator, other.shapeIs());
         }
 
+        /// Init tensor from another one, and fill with ones
         pub fn ones_like(allocator: Allocator, other: Self) !Self {
             return Self.ones(allocator, other.shapeIs());
         }
 
         /// get shape from tensor
-        pub fn shapeIs(self: Self) []u32 {
+        pub inline fn shapeIs(self: Self) []u32 {
             return self.shape;
         }
 
         /// Gets the datatype
-        pub inline fn dtype(_: Self) type {
+        pub inline fn dtype(self: Self) type {
+            _ = self;
             return T;
         }
 
@@ -90,12 +92,12 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Shorthand fill for zeros
-        pub inline fn zeros(allocator: Allocator, shape: anytype) !Self {
+        pub fn zeros(allocator: Allocator, shape: anytype) !Self {
             return Self.fill(allocator, @as(T, 0), shape);
         }
 
         /// Shorthand fill for ones
-        pub inline fn ones(allocator: Allocator, shape: anytype) !Self {
+        pub fn ones(allocator: Allocator, shape: anytype) !Self {
             return Self.fill(allocator, @as(T, 1), shape);
         }
 
@@ -103,12 +105,14 @@ pub fn Tensor(comptime T: type) type {
         //    Randoms
         // ================================
         pub fn rand(allocator: Allocator, shape: anytype) !Self {
+            // TODO: need more logic for var
+            // TODO: shapes should not be anytype?
             const value = try utils.getRandomNumber();
             return Self.fill(allocator, @as(T, value), shape);
         }
 
         pub inline fn randn(allocator: Allocator, lo: T, hi: T, shape: anytype) !Self {
-            // TODO: Fix
+            // TODO: Fix same as abbove
             return Self.fill(allocator, @as(T, lo + hi), shape);
         }
 
@@ -132,6 +136,7 @@ pub fn Tensor(comptime T: type) type {
 
         /// Get maximum element from tensor
         pub fn min(self: Self) T {
+            // TODO: we dont know if dtype is float here
             var res: T = std.math.floatMax(T);
 
             for (self.data) |e| {
@@ -203,22 +208,26 @@ pub fn Tensor(comptime T: type) type {
         //       ADDITION
         // ====================================
 
+        /// Add two tensors and return a new one
         pub fn add(self: Self, other: anytype) Self {
             _ = self;
             _ = other;
         }
 
+        /// Add two tensors and mutate the first one
         pub fn add_mut(self: *Self, other: anytype) void {
             _ = self;
             _ = other;
         }
 
+        /// Add scalar to tensor and return new tensor
         pub fn add_scalar(self: *Self, value: T) Self {
             _ = self;
             _ = value;
             return undefined;
         }
 
+        /// Add scalar to tensor and mutate it
         pub fn add_scalar_mut(self: *Self, value: T) void {
             for (self.data) |e| {
                 e += value;
@@ -334,7 +343,12 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// TODO: Implement
-        pub fn approx() void {}
+        pub fn is_approx(self: *Self, other: *Self, eps: f32) bool {
+            _ = self;
+            _ = other;
+            _ = eps;
+            return false;
+        }
 
         /// equals requires the same shape as well
         pub fn isSameAs(self: Self, other: Self) bool {
@@ -352,23 +366,30 @@ pub fn Tensor(comptime T: type) type {
 
         /// math.sqrt
         pub fn sqrt(self: *Self) void {
-            _ = self;
+            for (self.data) |e| {
+                e = math.sqrt(e);
+            }
         }
 
         /// math.log sets base to 2
         pub fn log(self: *Self) void {
-            return self.logn(2);
+            for (self.data) |e| {
+                e = math.log2(e);
+            }
         }
 
         /// math.logn
         pub fn logn(self: *Self, n: u32) void {
-            _ = self;
-            _ = n;
+            for (self.data) |e| {
+                e = math.log(T, n, e);
+            }
         }
 
         /// math.exp
         pub fn exp(self: *Self) void {
-            _ = self;
+            for (self.data) |e| {
+                e = math.exp(e);
+            }
         }
 
         // ==================================
@@ -390,7 +411,9 @@ pub fn Tensor(comptime T: type) type {
 
         /// ReLU activation function
         pub fn relu_mut(self: *Self) void {
-            _ = self;
+            for (self.data) |e| {
+                e = if (e > @as(T, 0)) e else 0;
+            }
         }
 
         pub fn relu(self: Self) Self {
@@ -399,7 +422,9 @@ pub fn Tensor(comptime T: type) type {
 
         /// GeLU activation function
         pub fn gelu_mut(self: *Self) void {
-            _ = self;
+            for (self.data) |e| {
+                e = if (e > @as(T, 0)) e else e * 0.01;
+            }
         }
 
         pub fn gelu(self: Self) Self {
@@ -408,8 +433,9 @@ pub fn Tensor(comptime T: type) type {
 
         /// sigmoid activation function
         pub fn sigmoid_mut(self: *Self) void {
-            _ = self;
-            return 0.0;
+            for (self.data) |e| {
+                e = @divExact(@as(T, 1), @as(T, 1) + math.exp(-e));
+            }
         }
 
         pub fn sigmoid(self: Self) Self {
