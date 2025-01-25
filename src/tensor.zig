@@ -117,8 +117,13 @@ pub fn Tensor(comptime T: type) type {
         }
 
         pub inline fn randn(allocator: Allocator, lo: T, hi: T, shape: anytype) !Self {
-            // TODO: Fix same as abbove
-            return Self.fill(allocator, @as(T, lo + hi), shape);
+            const t: Self = try Self.init(allocator, shape);
+
+            for (t.data) |*elem| {
+                elem.* = try utils.getRandomNumberBetween(lo, hi);
+            }
+
+            return t;
         }
 
         /// Get the rank of the tensor
@@ -509,7 +514,8 @@ test "randn" {
     var tensor = try TF32.randn(allocator, 1.0, 4.0, &[_]u32{ 3, 3, 3 });
     defer tensor.deinit();
 
-    try testing.expectEqual(27, tensor.size());
+    try testing.expect(tensor.min() >= @as(f32, 1.0));
+    try testing.expect(tensor.max() <= @as(f32, 4.0));
 }
 
 test "zeros like" {
