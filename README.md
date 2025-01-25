@@ -2,6 +2,13 @@
 
 To quote a wise man: "For the joy of programming!"
 
+## What's here
+
+- [x] Generic tensor using comptime
+- [ ] Simple layers
+- [ ] Autograd
+- [ ] Comp. graph
+
 ## Install
 
 To add to build.zig.zon
