@@ -148,6 +148,13 @@ pub fn Tensor(comptime T: type) type {
             return res;
         }
 
+        /// NOTE: For me as temp to try stuff
+        pub fn setVal(self: *Self, idx: u32, val: T) void {
+            if (idx > self.size()) return;
+
+            self.data[idx] = val;
+        }
+
         /// extrema() calls both the min and max of an array
         pub fn extrema(self: Self) [2]T {
             return .{ self.min(), self.max() };
