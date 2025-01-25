@@ -104,11 +104,16 @@ pub fn Tensor(comptime T: type) type {
         // ================================
         //    Randoms
         // ================================
+
+        /// Generate tensor of random numbers between 0 and 1
         pub fn rand(allocator: Allocator, shape: anytype) !Self {
-            // TODO: need more logic for var
-            // TODO: shapes should not be anytype?
-            const value = try utils.getRandomNumber();
-            return Self.fill(allocator, @as(T, value), shape);
+            const t: Self = try Self.init(allocator, shape);
+
+            for (t.data) |*elem| {
+                elem.* = try utils.getRandomNumber();
+            }
+
+            return t;
         }
 
         pub inline fn randn(allocator: Allocator, lo: T, hi: T, shape: anytype) !Self {
