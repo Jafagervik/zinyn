@@ -4,10 +4,9 @@ const fs = std.fs;
 
 const Tensor = @import("tensor.zig").Tensor;
 
-// Add these methods to your Tensor struct
 pub fn TensorSerializer(comptime T: type) type {
+    // TODO: Add support for safetensors format
     return struct {
-        // Binary format serialization
         pub fn saveBinary(self: Tensor(T), path: []const u8) !void {
             const file = try fs.cwd().createFile(path, .{});
             defer file.close();
@@ -16,7 +15,6 @@ pub fn TensorSerializer(comptime T: type) type {
             try file.writeAll(std.mem.asBytes(&@as(u32, self.shape.len)));
             try file.writeAll(std.mem.sliceAsBytes(self.shape));
 
-            // Write data
             try file.writeAll(std.mem.sliceAsBytes(self.data));
         }
 
@@ -37,11 +35,9 @@ pub fn TensorSerializer(comptime T: type) type {
                 total_elements *= dim;
             }
 
-            // Read data
             const data = try allocator.alloc(T, total_elements);
             _ = try file.read(std.mem.sliceAsBytes(data));
 
-            // Calculate strides
             const strides = try Tensor(T).calculateStrides(allocator, shape);
 
             return Tensor(T){
@@ -52,7 +48,6 @@ pub fn TensorSerializer(comptime T: type) type {
             };
         }
 
-        // JSON format serialization
         pub fn saveJson(self: Tensor(T), path: []const u8) !void {
             const file = try fs.cwd().createFile(path, .{});
             defer file.close();
@@ -96,14 +91,13 @@ pub fn TensorSerializer(comptime T: type) type {
             var data = try allocator.alloc(T, json_data.items.len);
             for (json_data.items, 0..) |val, i| {
                 data[i] = switch (T) {
-                    f32, f64 => @floatCast(val.float),
-                    i32, i64 => @intCast(val.integer),
+                    f16, f32, f64 => @floatCast(val.float),
+                    i16, i32, i64 => @intCast(val.integer),
                     else => @compileError("Unsupported type for JSON serialization"),
                 };
             }
 
-            // Calculate strides
-            const strides = try Tensor(f32).calculateStrides(allocator, shape);
+            const strides = try Tensor(T).calculateStrides(allocator, shape);
 
             return Tensor(T){
                 .data = data,
