@@ -1,4 +1,6 @@
 //! This structure defines a node to be used in our computational dynamic graph
+const std = @import("std");
+const testing = std.testing;
 
 pub fn Node(comptime T: type) type {
     return struct {
@@ -10,7 +12,7 @@ pub fn Node(comptime T: type) type {
         op: ?fn (T, T) T = null,
         /// Unary operations: relu, sigmoid
         uop: ?fn (T) T = null,
-        inputs: []const Self,
+        inputs: ?[]const Self = null,
 
         /// Backwards grad
         pub fn backward(self: *Node, grad: T) void {
@@ -53,6 +55,14 @@ fn relu(x: f64) f64 {
 
 fn sigmoid(x: f64) f64 {
     return 1.0 / (1.0 + @exp(-x));
+}
+
+fn tanh(x: f64) f64 {
+    return (@exp(x) - @exp(-x)) / (@exp(x) + @exp(-x));
+}
+
+fn softmax(x: f64) f64 {
+    return x;
 }
 
 fn addition(a: f64, b: f64) f64 {
