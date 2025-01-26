@@ -1,5 +1,6 @@
 const std = @import("std");
 
+pub const Node = @import("compgraph/node.zig").Node;
 pub const Tensor = @import("tensor.zig").Tensor;
 const TF32 = Tensor(f32);
 
