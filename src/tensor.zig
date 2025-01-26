@@ -464,29 +464,29 @@ pub fn Tensor(comptime T: type) type {
 
         /// math.sqrt
         pub fn sqrt(self: *Self) void {
-            for (self.data) |e| {
-                e = math.sqrt(e);
+            for (self.data) |*e| {
+                e.* = @sqrt(e);
             }
         }
 
         /// math.log sets base to 2
         pub fn log(self: *Self) void {
-            for (self.data) |e| {
-                e = math.log2(e);
+            for (self.data) |*e| {
+                e.* = math.log2(e);
             }
         }
 
         /// math.logn
         pub fn logn(self: *Self, n: u32) void {
-            for (self.data) |e| {
-                e = math.log(T, n, e);
+            for (self.data) |*e| {
+                e.* = math.log(T, n, e);
             }
         }
 
         /// math.exp
         pub fn exp(self: *Self) void {
-            for (self.data) |e| {
-                e = math.exp(e);
+            for (self.data) |*e| {
+                e.* = @exp(e);
             }
         }
 
