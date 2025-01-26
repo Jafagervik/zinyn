@@ -10,7 +10,9 @@ fn main() !void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
 
+    // Create a tensor of shape (2, 3, 4) and populate it with pi
     var tensor = try TF32.fill(allocator, math.pi, &[_]usize{ 2, 3, 4 });
     defer tensor.deinit();
 

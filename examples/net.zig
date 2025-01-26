@@ -5,15 +5,17 @@ const Allocator = std.mem.Allocator;
 const math = std.math;
 
 const zinyn = @import("zinyn");
+
 const Tensor = zinyn.Tensor;
 const mse = zinyn.Tensor.mse;
 const Layer = zinyn.Layer;
 const Model = zinyn.Model;
 const optim = zinyn.optim;
 const Adam = optim.Adam;
-const mse = zinyn.losses.mse;
 
-fn train_step(x: Tensor(f32), model: *Model, opt: *Adam) Tensor(f32) {
+const TF32 = Tensor(f32);
+
+fn train_step(x: TF32, model: *Model, opt: *Adam) TF32 {
     opt.zero_grad();
 
     const y = model.forward(x);
@@ -26,10 +28,10 @@ fn train_step(x: Tensor(f32), model: *Model, opt: *Adam) Tensor(f32) {
 }
 
 fn main() !void {
-    const TF32 = Tensor(f32);
-
+    // Set up an allocator as usual
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
 
     // Load data
 
