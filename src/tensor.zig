@@ -15,6 +15,10 @@ pub fn Tensor(comptime T: type) type {
         strides: []u32,
         allocator: Allocator,
 
+        inline fn checkShape(lhs: Self, rhs: Self) bool {
+            return std.mem.eql(u32, lhs.shapeIs(), rhs.shapeIs());
+        }
+
         /// Init tensor with undefined values
         pub fn init(allocator: Allocator, shape: anytype) !Self {
             // TODO: Use tigerstyle?
@@ -202,20 +206,22 @@ pub fn Tensor(comptime T: type) type {
             return tot;
         }
 
-        // self explanatory
-        inline fn getMemoryConsumption(self: *Self) f32 {
-            return self.getFirst() * 4.0;
+        // Get size in bytes
+        inline fn getMemoryConsumption(self: *Self) usize {
+            return self.data.len * @sizeOf(T);
         }
 
         /// print the tensor, only stats for now
         pub fn print(self: *Self) void {
             // TODO: Use better printing than debug printing
-            std.debug.print("Dtype: {}\n Shape: {}\n: Memory Consumption{}\n", .{ self.dtype, self.shape, self.getMemoryConsumption() });
+            std.debug.print("Dtype: {any}\nShape: {any}\nMemory Consumption {d} bytes\n", .{ T, self.shape, self.getMemoryConsumption() });
         }
 
         /// reshape the tensor
         pub inline fn reshape(self: *Self, newshape: anytype) void {
-            if (newshape.len != self.shape) return;
+            // For now, reshape only if the len of the two shapes are the same
+            // Otherwise just keep the shapes
+            if (newshape.len != self.shape.len) return;
             self.shape = newshape;
         }
 
@@ -227,6 +233,7 @@ pub fn Tensor(comptime T: type) type {
 
         /// Add two tensors and return a new one
         pub fn add(lhs: Self, rhs: Self) !Self {
+            // TODO: abstract into method
             if (!std.mem.eql(u32, lhs.shapeIs(), rhs.shapeIs())) {
                 return error.TensorError;
             }
@@ -241,22 +248,31 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Add two tensors and mutate the first one
-        pub fn add_mut(self: *Self, other: Self) void {
-            _ = self;
-            _ = other;
+        pub fn add_mut(lhs: *Self, rhs: Self) !void {
+            if (!checkShape(lhs.*, rhs)) {
+                return error.TensorError;
+            }
+
+            for (rhs.data, 0..) |r, i| {
+                lhs.data[i] += r;
+            }
         }
 
         /// Add scalar to tensor and return new tensor
-        pub fn add_scalar(self: *Self, value: T) Self {
-            _ = self;
-            _ = value;
-            return undefined;
+        pub fn add_scalar(self: *Self, value: T) !Self {
+            var t = try Self.init(self.allocator, self.shape);
+
+            for (self.data, 0..) |l, i| {
+                t.data[i] = l + value;
+            }
+
+            return t;
         }
 
         /// Add scalar to tensor and mutate it
         pub fn add_scalar_mut(self: *Self, value: T) void {
-            for (self.data) |e| {
-                e += value;
+            for (self.data) |*e| {
+                e.* += value;
             }
         }
 
@@ -278,20 +294,29 @@ pub fn Tensor(comptime T: type) type {
             return t;
         }
 
-        pub fn sub_mut(self: *Self, other: anytype) void {
-            _ = self;
-            _ = other;
+        pub fn sub_mut(lhs: *Self, rhs: Self) !void {
+            if (!checkShape(lhs.*, rhs)) {
+                return error.TensorError;
+            }
+
+            for (rhs.data, 0..) |r, i| {
+                lhs.data[i] -= r;
+            }
         }
 
         pub fn sub_scalar(self: *Self, value: T) Self {
-            _ = self;
-            _ = value;
-            return undefined;
+            var t = try Self.init(self.allocator, self.shape);
+
+            for (self.data, 0..) |l, i| {
+                t.data[i] = l - value;
+            }
+
+            return t;
         }
 
         pub fn sub_scalar_mut(self: *Self, value: T) void {
-            for (self.data) |e| {
-                e -= value;
+            for (self.data) |*e| {
+                e.* -= value;
             }
         }
 
@@ -313,20 +338,29 @@ pub fn Tensor(comptime T: type) type {
             return t;
         }
 
-        pub fn mul_mut(self: *Self, other: anytype) void {
-            _ = self;
-            _ = other;
+        pub fn mul_mut(lhs: *Self, rhs: Self) !void {
+            if (!checkShape(lhs.*, rhs)) {
+                return error.TensorError;
+            }
+
+            for (rhs.data, 0..) |r, i| {
+                lhs.data[i] -= r;
+            }
         }
 
         pub fn mul_scalar(self: *Self, value: T) Self {
-            _ = self;
-            _ = value;
-            return undefined;
+            var t = try Self.init(self.allocator, self.shape);
+
+            for (self.data, 0..) |l, i| {
+                t.data[i] = l * value;
+            }
+
+            return t;
         }
 
         pub fn mul_scalar_mut(self: *Self, value: T) void {
-            for (self.data) |e| {
-                e = @mulWithOverflow(e, value);
+            for (self.data) |*e| {
+                e.* *= value;
             }
         }
 
@@ -361,20 +395,30 @@ pub fn Tensor(comptime T: type) type {
             return t;
         }
 
-        pub fn div_mut(self: *Self, other: anytype) !void {
-            _ = self;
-            _ = other;
+        pub fn div_mut(lhs: *Self, rhs: Self) !void {
+            if (!checkShape(lhs.*, rhs)) {
+                return error.TensorError;
+            }
+
+            for (rhs.data, 0..) |r, i| {
+                if (r == @as(T, 0)) return error.DivByZeroError;
+                lhs.data[i] -= r;
+            }
         }
 
         pub fn div_scalar(self: *Self, value: T) !Self {
-            _ = self;
-            _ = value;
-            return undefined;
+            var t = try Self.init(self.allocator, self.shape);
+
+            for (self.data, 0..) |l, i| {
+                t.data[i] = l / value;
+            }
+
+            return t;
         }
 
         pub fn div_scalar_mut(self: *Self, value: T) !void {
-            for (self.data) |e| {
-                e /= value;
+            for (self.data) |*e| {
+                e.* /= value;
             }
         }
 
@@ -597,6 +641,49 @@ test "add" {
     defer c.deinit();
 
     try testing.expectEqual(5.0, c.getFirst());
+}
+
+test "add mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    try a.add_mut(b);
+
+    try testing.expectEqual(5.0, a.getFirst());
+}
+
+test "add scalar" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try a.add_scalar(2.0);
+    defer b.deinit();
+
+    try testing.expectEqual(4.0, b.getFirst());
+}
+
+test "add scalar mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    a.add_scalar_mut(5.0);
+
+    try testing.expectEqual(7.0, a.getFirst());
 }
 
 test "sub" {

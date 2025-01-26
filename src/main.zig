@@ -18,6 +18,8 @@ pub fn main() !void {
     }
 
     std.log.info("extrema {any}", .{bon.extrema()});
+
+    bon.print();
 }
 
 test {
