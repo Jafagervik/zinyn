@@ -44,8 +44,8 @@ exe.root_module.addImport("zybel", zybel.module("zybel"));
 ```zig
 const std = @import("std");
 
-const zinyn = @import("zybel");
-const Tensor = zinyn.Tensor;
+const zb = @import("zybel");
+const Tensor = zb.Tensor;
 const TF32 = Tensor(f32);
 
 pub fn main() !void {

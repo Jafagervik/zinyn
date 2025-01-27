@@ -139,7 +139,7 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// Get the rank of the tensor
-        pub inline fn rank(self: Self) u32 {
+        pub inline fn rank(self: Self) usize {
             return self.shape.len;
         }
 
@@ -234,10 +234,8 @@ pub fn Tensor(comptime T: type) type {
 
         /// get() returns data based on what is passed as a param
         /// A list of numbers gives something
-        pub fn get(idxs: anytype) ?T {
-            // TODO: Implement this painful experience
-            _ = idxs;
-            return null;
+        pub fn get(self: *Self, idx: usize) T {
+            return self.data[idx];
         }
 
         /// Sum of all elements in the tensor
@@ -420,11 +418,37 @@ pub fn Tensor(comptime T: type) type {
             }
         }
 
+        /// Blocked matrix multiplication between two tensors
+        /// of dims {m, n} x {n, p}
         /// MATMUL SHOULD BE FAST AS FUCK
-        pub fn matmul(lhs: Self, rhs: Self) void {
-            _ = lhs;
-            _ = rhs;
-            // TODO: connect to cuda
+        pub fn matmul(lhs: *Self, rhs: *Self) !Self {
+            // Check dims and shape
+            if (lhs.shape[1] != rhs.shape[0] or lhs.rank() != 2) {
+                return error.TensorError;
+            }
+
+            const m = lhs.shape[0];
+            const n = lhs.shape[1];
+            const p = rhs.shape[1];
+
+            var t = try Self.init(lhs.allocator, &[_]u32{ m, p });
+
+            for (0..m) |i| {
+                for (0..p) |k| {
+                    var r: T = 0;
+
+                    for (0..n) |j| {
+                        const lhs_index = utils.get1DIndex(i, j, n);
+                        const rhs_index = utils.get1DIndex(j, k, p);
+                        r += lhs.get(lhs_index) * rhs.get(rhs_index);
+                    }
+
+                    const tidx: u32 = @intCast(utils.get1DIndex(i, k, p));
+                    t.setVal(tidx, r);
+                }
+            }
+
+            return t;
         }
 
         /// shorthand for matmul
@@ -1106,4 +1130,21 @@ test "huber_loss" {
     try testing.expectApproxEqAbs(1.5, hl, 0.001);
 }
 
-test "matmul" {}
+test "matmul" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 2, 2 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 2, 2 });
+    defer b.deinit();
+
+    var c = try a.matmul(&b);
+    defer c.deinit();
+
+    try testing.expectApproxEqAbs(8.0, c.get(0), 0.001);
+    try testing.expectApproxEqAbs(8.0, c.get(1), 0.001);
+    try testing.expectApproxEqAbs(8.0, c.get(2), 0.001);
+    try testing.expectApproxEqAbs(8.0, c.get(3), 0.001);
+}
