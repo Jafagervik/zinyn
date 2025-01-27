@@ -1,3 +1,6 @@
+//! ==============================================
+//!  Everything is a tensor... B-)
+//! ==============================================
 const std = @import("std");
 const math = std.math;
 const testing = std.testing;
@@ -623,6 +626,75 @@ pub fn Tensor(comptime T: type) type {
             _ = self;
             return void;
         }
+
+        // =============================
+        //      Loss functions
+        // =============================
+
+        /// Mean squared error
+        pub fn mse(lhs: *Self, rhs: *Self) T {
+            // TODO: Check the difference between tensor shapes
+            var res: T = 0;
+
+            for (lhs.data, rhs.data) |l, r| {
+                const diff = l - r;
+                res += (diff * diff);
+            }
+
+            return res / @as(T, @floatFromInt(lhs.size()));
+        }
+
+        /// Mean absolute error
+        pub fn mae(lhs: *Self, rhs: *Self) T {
+            // TODO: Check the difference between tensor shapes
+            var res: T = 0;
+
+            for (lhs.data, rhs.data) |l, r| {
+                res += @abs(l - r);
+            }
+
+            return res / @as(T, @floatFromInt(lhs.size()));
+        }
+
+        /// Hinge loss
+        pub fn hinge_loss(lhs: *Self, rhs: *Self) T {
+            // TODO: Check the difference between tensor shapes
+            var res: T = 0;
+
+            for (lhs.data, rhs.data) |l, r| {
+                res += @max(@as(T, 0), @as(T, 1) - l * r);
+            }
+
+            return res / @as(T, @floatFromInt(lhs.size()));
+        }
+
+        /// Log-cosh loss
+        pub fn log_cosh_loss(lhs: *Self, rhs: *Self) T {
+            // TODO: Check the difference between tensor shapes
+            var res: T = 0;
+
+            for (lhs.data, rhs.data) |l, r| {
+                res += @log(math.cosh(l - r));
+            }
+
+            return res / @as(T, @floatFromInt(lhs.size()));
+        }
+
+        /// Huber loss
+        pub fn huber_loss(lhs: *Self, rhs: *Self, delta: T) T {
+            // TODO: Check the difference between tensor shapes
+            var res: T = 0;
+
+            for (lhs.data, rhs.data) |l, r| {
+                const diff = l - r;
+                res += if (@abs(diff) <= delta)
+                    (diff * diff) / @as(T, 2)
+                else
+                    delta * (@abs(diff) - delta / @as(T, 2));
+            }
+
+            return res / @as(T, @floatFromInt(lhs.size()));
+        }
     };
 }
 
@@ -711,7 +783,6 @@ test "ones like" {
 
 test "add" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -728,7 +799,6 @@ test "add" {
 
 test "add mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -744,7 +814,6 @@ test "add mut" {
 
 test "add scalar" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -758,7 +827,6 @@ test "add scalar" {
 
 test "add scalar mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -771,7 +839,6 @@ test "add scalar mut" {
 
 test "sub" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 5.0, &[_]u32{ 1, 3, 4 });
@@ -788,7 +855,6 @@ test "sub" {
 
 test "sub mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 5.0, &[_]u32{ 1, 3, 4 });
@@ -804,7 +870,6 @@ test "sub mut" {
 
 test "sub scalar" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -818,7 +883,6 @@ test "sub scalar" {
 
 test "sub scalar mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -831,7 +895,6 @@ test "sub scalar mut" {
 
 test "mul" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -848,7 +911,6 @@ test "mul" {
 
 test "mul mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -864,7 +926,6 @@ test "mul mut" {
 
 test "mul scalar" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -878,7 +939,6 @@ test "mul scalar" {
 
 test "mul scalar mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -891,7 +951,6 @@ test "mul scalar mut" {
 
 test "div" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 6.0, &[_]u32{ 1, 3, 4 });
@@ -908,7 +967,6 @@ test "div" {
 
 test "div mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 12.0, &[_]u32{ 1, 3, 4 });
@@ -924,7 +982,6 @@ test "div mut" {
 
 test "div scalar" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
@@ -938,7 +995,6 @@ test "div scalar" {
 
 test "div scalar mut" {
     const TF32 = Tensor(f32);
-
     const allocator = testing.allocator;
 
     var a = try TF32.fill(allocator, 10.0, &[_]u32{ 1, 3, 4 });
@@ -971,6 +1027,83 @@ test "clamp" {
     a.clamp(null, 5.0);
 
     try testing.expectEqual(5.0, a.getFirst());
+}
+
+test "mse" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 1, 3 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 1, 3 });
+    defer b.deinit();
+
+    const ms = a.mse(&b);
+
+    try testing.expectApproxEqAbs(4.0, ms, 0.001);
+}
+
+test "mae" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 1, 3 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 1, 3 });
+    defer b.deinit();
+
+    const ms = a.mae(&b);
+
+    try testing.expectEqual(2.0, ms);
+}
+
+test "hinge_loss" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 1.0, &[_]u32{ 1, 1, 3 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, -1.0, &[_]u32{ 1, 1, 3 });
+    defer b.deinit();
+
+    const hl = a.hinge_loss(&b);
+
+    try testing.expectEqual(2.0, hl);
+}
+
+test "log_cosh_loss" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 1, 3 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 1, 3 });
+    defer b.deinit();
+
+    const lc = a.log_cosh_loss(&b);
+    const loss = TF32.log_cosh_loss(&a, &b);
+
+    try testing.expectApproxEqAbs(1.325, lc, 0.001);
+    try testing.expectApproxEqAbs(lc, loss, 0.001);
+}
+
+test "huber_loss" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 1, 3 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 1, 3 });
+    defer b.deinit();
+
+    const hl = a.huber_loss(&b, 1.0);
+
+    try testing.expectApproxEqAbs(1.5, hl, 0.001);
 }
 
 test "matmul" {}

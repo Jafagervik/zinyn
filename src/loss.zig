@@ -1,5 +1,6 @@
-//! Loss functions tjohei
+//! 5 common loss functions for dnns. If you need more, just make the functions yourself :P
 
+// TODO: potentially remove this file?
 const std = @import("std");
 const math = std.math;
 
@@ -113,6 +114,9 @@ test "hinge_loss" {
     var b = try TF32.fill(allocator, -1.0, &[_]u32{ 1, 1, 3 });
     defer b.deinit();
 
+    // a.hinge_loss(b);
+    // TF32.hinge_loss(a, b);
+    // const hl = zinyn.loss.hinge_loss(f32, &a, &b);
     const hl = hinge_loss(f32, &a, &b);
 
     try testing.expectEqual(2.0, hl);
