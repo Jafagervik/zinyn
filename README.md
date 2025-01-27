@@ -22,23 +22,21 @@ To quote a wise man: "For the joy of programming!"
 - [ ] Computational graph
 - [ ] Hardware acceleration support
 
-## Install
+## Install (Per 0.14 beta)
 
 Run this command in the parent directory of your project
 
 ```sh
-zig fetch --save git+https://github.com/Jafagervik/zinyn/#HEAD
+zig fetch --save git+https://github.com/Jafagervik/zybel.git
 ```
 
 Then add these lines to build.zig before b.installArtifact(exe)
 
 ```zig
-const zinyn = b.dependency("zinyn", .{
-    .target = target,
-    .optimize = optimize,
-});
+const zybel = b.dependency("zybel", .{});
 
-exe.root_module.addImport("zinyn.zig", zinyn.module("zinyn.zig"));
+exe.root_module.addImport("zybel", zybel.module("zybel"));
+
 ```
 
 ## Example
@@ -46,7 +44,7 @@ exe.root_module.addImport("zinyn.zig", zinyn.module("zinyn.zig"));
 ```zig
 const std = @import("std");
 
-const zinyn = @import("zinyn");
+const zinyn = @import("zybel");
 const Tensor = zinyn.Tensor;
 const TF32 = Tensor(f32);
 

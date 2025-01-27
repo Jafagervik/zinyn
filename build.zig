@@ -9,9 +9,10 @@ pub fn build(b: *std.Build) void {
     });
 
     const tests = b.addTest(.{
-        .root_source_file = b.path("src/zybel.zig"),
         .target = target,
         .optimize = optimize,
+        // .test_runner = b.path("test_runner.zig"),
+        .root_source_file = b.path("src/zybel.zig"),
     });
 
     const run_lib_unit_tests = b.addRunArtifact(tests);
