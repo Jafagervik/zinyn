@@ -1,5 +1,9 @@
+//! Collection of different optimizers for zinyn
+//! Currently only ADAM and SDG has any sort of impl
 const std = @import("std");
-const Tensor = @import("tensor.zig").Tensor;
+const tensor = @import("tensor.zig");
+
+const Tensor = tensor.Tensor;
 
 /// Enum based interface for optimizers
 pub const Optimizer = union(enum) {
@@ -15,6 +19,46 @@ pub const Optimizer = union(enum) {
 
 /// The adam optimizer
 const Adam = struct {
+    /// Learning rate for Adam
+    learning_rate: f32 = 0.001,
+
+    /// First Beta value for Adam
+    beta1: f32 = 0.9,
+
+    /// Second Beta value for Adam
+    beta2: f32 = 0.999,
+
+    epsilon: f32 = 1e-8,
+
+    pub fn step(self: *Adam, param: *Tensor(f32), grad: *Tensor(f32)) !void {
+        _ = self;
+        _ = param;
+        _ = grad;
+    }
+};
+
+/// The AdamW optimizer
+const AdamW = struct {
+    /// Learning rate for Adam
+    learning_rate: f32 = 0.001,
+
+    /// First Beta value for Adam
+    beta1: f32 = 0.9,
+
+    /// Second Beta value for Adam
+    beta2: f32 = 0.999,
+
+    epsilon: f32 = 1e-8,
+
+    pub fn step(self: *Adam, param: *Tensor(f32), grad: *Tensor(f32)) !void {
+        _ = self;
+        _ = param;
+        _ = grad;
+    }
+};
+
+/// The RMSProp optimizer
+const RMSProp = struct {
     /// Learning rate for Adam
     learning_rate: f32 = 0.001,
 
