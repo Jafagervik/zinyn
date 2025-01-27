@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
-        .version = .{ .major = 0, .minor = 0, .patch = 1 },
+        .version = .{ .major = 0, .minor = 0, .patch = 2 },
     });
 
     b.installArtifact(lib);

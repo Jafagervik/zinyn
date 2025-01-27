@@ -3,7 +3,7 @@ const Tensor = @import("tensor.zig").Tensor;
 
 /// Enum based interface for optimizers
 pub const Optimizer = union(enum) {
-    adam: Adam,
+    // adam: Adam,
     sgd: SGD,
 
     pub fn step(self: *Optimizer, param: *Tensor(f32), grad: *Tensor(f32)) !void {
@@ -14,7 +14,7 @@ pub const Optimizer = union(enum) {
 };
 
 /// The adam optimizer
-pub const Adam = struct {
+const Adam = struct {
     /// Learning rate for Adam
     learning_rate: f32 = 0.001,
 

@@ -1,15 +1,26 @@
 # Zinyn - ML and AI made possible for fun
 
+## Goal
+
+Create a framework for training DNNs in Zig (using hardware accelerators)
+and compare results
+
+## Why?
+
 To quote a wise man: "For the joy of programming!"
 
-## What's here
+## Features
 
 - [x] Generic tensor using comptime
 - [x] Binops such as add, sub, mul, div
+- [x] General tensor ops (clamp, reshape, sum, min, max...)
 - [x] SGD optimizer
+- [ ] Activation functions
+- [ ] Common loss functions
 - [ ] Simple layers
 - [ ] Autograd
-- [ ] Comp. graph
+- [ ] Computational graph
+- [ ] Hardware acceleration support
 
 ## Install
 

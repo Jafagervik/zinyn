@@ -43,6 +43,11 @@ pub fn Tensor(comptime T: type) type {
             };
         }
 
+        /// Same as init, but with api closer to pytorch
+        pub fn empty(allocator: Allocator, shape: anytype) !Self {
+            return Self.init(allocator, shape);
+        }
+
         /// init from other shape
         pub fn zeros_like(allocator: Allocator, other: Self) !Self {
             return Self.zeros(allocator, other.shapeIs());
@@ -114,7 +119,7 @@ pub fn Tensor(comptime T: type) type {
             const t: Self = try Self.init(allocator, shape);
 
             for (t.data) |*elem| {
-                elem.* = try utils.getRandomNumber();
+                elem.* = try utils.getRandomNumber(null);
             }
 
             return t;
@@ -162,6 +167,33 @@ pub fn Tensor(comptime T: type) type {
             return res;
         }
 
+        /// Get maximum element from tensor
+        pub fn mean(self: Self) T {
+            // TODO: we dont know if dtype is float here
+            var res: f64 = 0;
+
+            for (self.data) |e| {
+                res += @floatCast(e);
+            }
+
+            res /= @as(f64, self.size());
+
+            return @as(T, res);
+        }
+
+        /// Clamps a tensor in place
+        pub fn clamp(self: Self, lo: ?T, hi: ?T) void {
+            for (self.data) |*e| {
+                if (lo) |l| {
+                    if (e.* < l) e.* = l;
+                }
+
+                if (hi) |h| {
+                    if (e.* > h) e.* = h;
+                }
+            }
+        }
+
         /// NOTE: For me as temp to try stuff
         pub fn setVal(self: *Self, idx: u32, val: T) void {
             if (idx > self.size()) return;
@@ -197,11 +229,28 @@ pub fn Tensor(comptime T: type) type {
             return strides;
         }
 
+        /// get() returns data based on what is passed as a param
+        /// A list of numbers gives something
+        pub fn get(idxs: anytype) ?T {
+            // TODO: Implement this painful experience
+            _ = idxs;
+            return null;
+        }
+
         /// Sum of all elements in the tensor
         pub fn sum(self: *Self) T {
             var tot: T = @as(T, 0);
 
             for (self.data) |e| tot += e;
+
+            return tot;
+        }
+
+        /// Product of all elements in the tensor
+        pub fn prod(self: *Self) T {
+            var tot: T = @as(T, 0);
+
+            for (self.data) |e| tot *= e;
 
             return tot;
         }
@@ -218,11 +267,15 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// reshape the tensor
-        pub inline fn reshape(self: *Self, newshape: anytype) void {
+        pub inline fn reshape(self: *Self, newshape: anytype) !void {
             // For now, reshape only if the len of the two shapes are the same
             // Otherwise just keep the shapes
             if (newshape.len != self.shape.len) return;
-            self.shape = newshape;
+
+            const owned_shape = try self.allocator.dupe(u32, newshape);
+            errdefer self.allocator.free(owned_shape);
+
+            self.shape = owned_shape;
         }
 
         // pub fn transpose(self: *Self, newshape: anytype) void {}
@@ -304,7 +357,7 @@ pub fn Tensor(comptime T: type) type {
             }
         }
 
-        pub fn sub_scalar(self: *Self, value: T) Self {
+        pub fn sub_scalar(self: *Self, value: T) !Self {
             var t = try Self.init(self.allocator, self.shape);
 
             for (self.data, 0..) |l, i| {
@@ -344,11 +397,11 @@ pub fn Tensor(comptime T: type) type {
             }
 
             for (rhs.data, 0..) |r, i| {
-                lhs.data[i] -= r;
+                lhs.data[i] *= r;
             }
         }
 
-        pub fn mul_scalar(self: *Self, value: T) Self {
+        pub fn mul_scalar(self: *Self, value: T) !Self {
             var t = try Self.init(self.allocator, self.shape);
 
             for (self.data, 0..) |l, i| {
@@ -402,7 +455,7 @@ pub fn Tensor(comptime T: type) type {
 
             for (rhs.data, 0..) |r, i| {
                 if (r == @as(T, 0)) return error.DivByZeroError;
-                lhs.data[i] -= r;
+                lhs.data[i] /= r;
             }
         }
 
@@ -449,8 +502,8 @@ pub fn Tensor(comptime T: type) type {
         }
 
         /// equals requires the same shape as well
-        pub fn isSameAs(self: Self, other: Self) bool {
-            if (self.size() != other.size() or self.shape != other.shape) return false;
+        pub fn eq(self: Self, other: Self) bool {
+            if (self.size() != other.size() or !self.checkShape(other)) return false;
 
             var i: usize = 0;
             while (self.data[i]) : (i += 1) {
@@ -460,6 +513,18 @@ pub fn Tensor(comptime T: type) type {
             }
 
             return true;
+        }
+
+        /// Squeeze dimensions
+        pub fn squeeze(self: *Self, dim: u32) void {
+            _ = self;
+            _ = dim;
+        }
+
+        /// Unqueeze dimensions
+        pub fn unsqueeze(self: *Self, dim: u32) void {
+            _ = self;
+            _ = dim;
         }
 
         /// math.sqrt
@@ -538,6 +603,25 @@ pub fn Tensor(comptime T: type) type {
 
         pub fn sigmoid(self: Self) Self {
             _ = self;
+        }
+
+        // =============================
+        //      Trigonometry
+        // =============================
+
+        pub fn sin(self: *Self) void {
+            _ = self;
+            return void;
+        }
+
+        pub fn cos(self: *Self) void {
+            _ = self;
+            return void;
+        }
+
+        pub fn tan(self: *Self) void {
+            _ = self;
+            return void;
         }
     };
 }
@@ -625,7 +709,6 @@ test "ones like" {
     try testing.expectEqual(@as(f32, 1), zl.getFirst());
 }
 
-// TODO: Fill in these tests
 test "add" {
     const TF32 = Tensor(f32);
 
@@ -691,10 +774,10 @@ test "sub" {
 
     const allocator = testing.allocator;
 
-    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 3, 4 });
+    var a = try TF32.fill(allocator, 5.0, &[_]u32{ 1, 3, 4 });
     defer a.deinit();
 
-    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
     defer b.deinit();
 
     var c = try a.sub(b);
@@ -702,34 +785,119 @@ test "sub" {
 
     try testing.expectEqual(2.0, c.getFirst());
 }
+
+test "sub mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 5.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    try a.sub_mut(b);
+
+    try testing.expectEqual(2.0, a.getFirst());
+}
+
+test "sub scalar" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try a.sub_scalar(2.0);
+    defer b.deinit();
+
+    try testing.expectEqual(0.0, b.getFirst());
+}
+
+test "sub scalar mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    a.sub_scalar_mut(5.0);
+
+    try testing.expectEqual(-3.0, a.getFirst());
+}
+
 test "mul" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
 
-    var a = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 3, 4 });
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
     defer a.deinit();
 
-    var b = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
     defer b.deinit();
 
     var c = try a.mul(b);
     defer c.deinit();
 
-    try testing.expectEqual(8.0, c.getFirst());
+    try testing.expectEqual(6.0, c.getFirst());
 }
 
-test "matmul" {}
+test "mul mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    try a.mul_mut(b);
+
+    try testing.expectEqual(6.0, a.getFirst());
+}
+
+test "mul scalar" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try a.mul_scalar(2.0);
+    defer b.deinit();
+
+    try testing.expectEqual(4.0, b.getFirst());
+}
+
+test "mul scalar mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    a.mul_scalar_mut(5.0);
+
+    try testing.expectEqual(10.0, a.getFirst());
+}
 
 test "div" {
     const TF32 = Tensor(f32);
 
     const allocator = testing.allocator;
 
-    var a = try TF32.fill(allocator, 8.0, &[_]u32{ 1, 3, 4 });
+    var a = try TF32.fill(allocator, 6.0, &[_]u32{ 1, 3, 4 });
     defer a.deinit();
 
-    var b = try TF32.fill(allocator, 4.0, &[_]u32{ 1, 3, 4 });
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
     defer b.deinit();
 
     var c = try a.div(b);
@@ -737,3 +905,72 @@ test "div" {
 
     try testing.expectEqual(2.0, c.getFirst());
 }
+
+test "div mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 12.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try TF32.fill(allocator, 3.0, &[_]u32{ 1, 3, 4 });
+    defer b.deinit();
+
+    try a.div_mut(b);
+
+    try testing.expectEqual(4.0, a.getFirst());
+}
+
+test "div scalar" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 2.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    var b = try a.div_scalar(2.0);
+    defer b.deinit();
+
+    try testing.expectEqual(1.0, b.getFirst());
+}
+
+test "div scalar mut" {
+    const TF32 = Tensor(f32);
+
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 10.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    try a.div_scalar_mut(5.0);
+
+    try testing.expectEqual(2.0, a.getFirst());
+}
+
+// test "reshape" {
+//     const TF32 = Tensor(f32);
+//     const allocator = testing.allocator;
+//
+//     var a = try TF32.fill(allocator, 10.0, &[_]u32{ 1, 3, 4 });
+//     defer a.deinit();
+//
+//     try a.reshape(&[_]u32{ 1, 6, 2 });
+//
+//     try testing.expectEqual(&[_]u32{ 1, 6, 2 }, a.shape);
+// }
+
+test "clamp" {
+    const TF32 = Tensor(f32);
+    const allocator = testing.allocator;
+
+    var a = try TF32.fill(allocator, 10.0, &[_]u32{ 1, 3, 4 });
+    defer a.deinit();
+
+    a.clamp(null, 5.0);
+
+    try testing.expectEqual(5.0, a.getFirst());
+}
+
+test "matmul" {}
