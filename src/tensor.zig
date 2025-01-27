@@ -420,8 +420,8 @@ pub fn Tensor(comptime T: type) type {
 
         /// Blocked matrix multiplication between two tensors
         /// of dims {m, n} x {n, p}
-        /// MATMUL SHOULD BE FAST AS FUCK
         pub fn matmul(lhs: *Self, rhs: *Self) !Self {
+            // TODO: Optimize heavily
             // Check dims and shape
             if (lhs.shape[1] != rhs.shape[0] or lhs.rank() != 2) {
                 return error.TensorError;
