@@ -451,9 +451,9 @@ pub fn Tensor(comptime T: type) type {
             return t;
         }
 
-        /// shorthand for matmul
-        pub fn mm(self: Self, newshape: Self) void {
-            self.matmul(newshape);
+        /// Shorthand for matmul
+        pub fn mm(lhs: *Self, rhs: *Self) !Self {
+            return Self.matmul(lhs, rhs);
         }
 
         // ====================================
