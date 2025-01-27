@@ -6,6 +6,7 @@ To quote a wise man: "For the joy of programming!"
 
 - [x] Generic tensor using comptime
 - [x] Binops such as add, sub, mul, div
+- [x] SGD optimizer
 - [ ] Simple layers
 - [ ] Autograd
 - [ ] Comp. graph
