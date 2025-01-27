@@ -1,4 +1,5 @@
-> [!WARNING] > **zybel** is still WIP. **Breaking changes** may occur
+> [!WARNING]
+> **zybel** is still WIP. **Breaking changes** may occur
 
 # Zinyn - ML and AI made possible for fun
 
