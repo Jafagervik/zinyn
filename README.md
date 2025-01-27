@@ -15,7 +15,7 @@ To quote a wise man: "For the joy of programming!"
 - [x] Binops such as add, sub, mul, div
 - [x] General tensor ops (clamp, reshape, sum, min, max...)
 - [x] SGD optimizer
-- [x] Common loss functions such as mse and mae
+- [x] Common loss functions such as mse and mae + 3 more
 - [ ] Activation functions
 - [ ] Simple layers
 - [ ] Autograd
