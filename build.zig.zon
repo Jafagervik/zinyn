@@ -1,7 +1,7 @@
 .{
     .name = "zybel",
     // TODO: Bump this verison before next release
-    .version = "0.0.2",
+    .version = "0.0.3",
     .minimum_zig_version = "0.13.0",
     .dependencies = .{},
     .paths = .{""},
