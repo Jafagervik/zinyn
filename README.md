@@ -5,19 +5,20 @@ To quote a wise man: "For the joy of programming!"
 ## What's here
 
 - [x] Generic tensor using comptime
+- [x] Binops such as add, sub, mul, div
 - [ ] Simple layers
 - [ ] Autograd
 - [ ] Comp. graph
 
 ## Install
 
-To add to build.zig.zon
+Run this command in the parent directory of your project
 
 ```sh
-zig fetch --save git+https://github.com/Jafagervik/zinyn/#Head
+zig fetch --save git+https://github.com/Jafagervik/zinyn/#HEAD
 ```
 
-Then add to build.zig
+Then add these lines to build.zig before b.installArtifact(exe)
 
 ```zig
 const zinyn = b.dependency("zinyn", .{
@@ -39,22 +40,23 @@ const TF32 = Tensor(f32);
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    const allocator = gpa.allocator();
+    // Creates a F32 Tensor of shape (1, 3, 3)
+    var t: TF32 = try TF32.ones(allocator, &[_]u32{ 1, 3, 3 });
+    defer t.deinit();
 
-    var bon: TF32 = try TF32.ones(allocator, &[_]u32{ 1, 3, 3 });
-    defer bon.deinit();
-
-    std.debug.print("First value is {d:.3}\n", .{bon.getFirst()});
+    std.debug.print("First value is {d:.2}\n", .{t.getFirst()});
 
     bon.setVal(0, 2.0);
 
-    std.debug.print("First value is {d:.3}\n", .{bon.getFirst()});
+    std.debug.print("First value is now {d:.2}\n", .{t.getFirst()});
 
-    std.debug.print("Shape is {any} and dtype is {any} \n", .{ bon.shapeIs(), bon.dtype() });
+    // Prints input about the tensor
+    t.print();
 
-    std.debug.print("Sum is {d:.3}\n", .{bon.sum()});
+    std.debug.print("Sum is {d:.2}\n", .{t.sum()});
 }
 ```
 
