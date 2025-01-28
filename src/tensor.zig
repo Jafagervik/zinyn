@@ -33,6 +33,10 @@ pub fn Tensor(comptime T: type) type {
         /// Parent nodes in autograd engine
         parents: [2]?*Self = [_]?*Self{ null, null },
 
+        pub inline fn req_grad(self: *Self) void {
+            self.requires_grad = true;
+        }
+
         /// Adds backward pass to compute gradients
         pub fn backward_internal(self: *Self, grad: ?*Tensor) !void {
             // TODO: Check if any of this is actually correct
@@ -330,9 +334,8 @@ test "grads" {
     var b = try TF32.fill(allocator, 2.0, &[_]u32{ 2, 2 });
     defer b.deinit();
 
-    // Default should be true?
-    a.requires_grad = true;
-    b.requires_grad = true;
+    a.req_grad();
+    b.req_grad();
 
     var c = try a.add(&b);
     defer c.deinit();

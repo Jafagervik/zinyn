@@ -1,4 +1,5 @@
 //! 5 common loss functions for dnns. If you need more, just make the functions yourself :P
+//! Note, this is currently just a supplement to those defined for tensor
 
 // TODO: potentially remove this file?
 const std = @import("std");
