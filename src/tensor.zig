@@ -221,8 +221,13 @@ pub fn Tensor(comptime T: type) type {
             return self.data[idx];
         }
 
+        /// Get all items
+        pub fn to_array(self: *Self) []T {
+            return self.data;
+        }
+
         // Get size in bytes
-        inline fn getMemoryConsumption(self: *Self) usize {
+        pub inline fn nbytes(self: *Self) usize {
             return self.data.len * @sizeOf(T);
         }
 
